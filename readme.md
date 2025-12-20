@@ -16,10 +16,19 @@ Knocking Goose is a Python tool that runs in the background and plays a sound wh
 
 ### Linux
 
-1. Run the installation script:
+1. Download the installation script:
+   ```bash
+   wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/Knock/main/install-knocking-goose-linux.sh -O install-knocking-goose-linux.sh
+   ```
+
+2. Make the script executable:
    ```bash
    chmod +x install-knocking-goose-linux.sh
-   ./install-knocking-goose-linux.sh
+   ```
+
+3. Run the installation script:
+   ```bash
+   sudo ./install-knocking-goose-linux.sh
    ```
 
 ### Windows
