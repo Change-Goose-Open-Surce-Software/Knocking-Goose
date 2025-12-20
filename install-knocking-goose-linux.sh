@@ -20,12 +20,12 @@ sudo apt-get install -y python3 python3-tk python3-pip
 
 # Copy files to the appropriate locations
 echo "Copying files..."
-sudo cp knocking-goose.py /usr/local/bin/kg
+sudo cp knocking-goose.py /usr/bin/kg
 sudo cp knocking-goose.desktop /usr/share/applications/
 sudo cp knocking-goose-icon.png /usr/share/icons/
 
 # Make the script executable
-sudo chmod +x /usr/local/bin/kg
+sudo chmod +x /usr/bin/kg
 
 # Add to autostart for GNOME
 echo "Adding to autostart..."
