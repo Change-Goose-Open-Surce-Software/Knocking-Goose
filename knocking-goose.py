@@ -33,7 +33,32 @@ def load_config():
     
     if os.path.exists(config_file):
         with open(config_file, 'r') as f:
-            return json.load(f)
+            config = json.load(f)
+        
+        # Migration: Convert old format to new format
+        if 'general_sound_disconnect' in config or 'general_sound_connect' in config:
+            print("Migrating old config format...")
+            new_config = default_config.copy()
+            new_config['disconnect_sound'] = config.get('general_sound_disconnect')
+            
+            # Convert old device_specific_sounds
+            if 'device_specific_sounds' in config:
+                for device_id, sounds in config['device_specific_sounds'].items():
+                    if isinstance(sounds, dict) and 'connect' in sounds:
+                        new_config['device_connect_sounds'][device_id] = sounds['connect']
+            
+            # Save migrated config
+            with open(config_file, 'w') as f:
+                json.dump(new_config, f, indent=4)
+            return new_config
+        
+        # Ensure all required keys exist
+        if 'disconnect_sound' not in config:
+            config['disconnect_sound'] = None
+        if 'device_connect_sounds' not in config:
+            config['device_connect_sounds'] = {}
+        
+        return config
     else:
         with open(config_file, 'w') as f:
             json.dump(default_config, f, indent=4)
