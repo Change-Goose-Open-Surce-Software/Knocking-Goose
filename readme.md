@@ -1,6 +1,6 @@
-# Knock - USB Device Sound Notifier
+# Knocking Goose - USB Device Sound Notifier
 
-Knock is a Python tool that runs in the background and plays a sound when a USB device is connected or disconnected. It allows you to customize sounds for general USB devices and specific USB devices.
+Knocking Goose is a Python tool that runs in the background and plays a sound when a USB device is connected or disconnected. It allows you to customize sounds for general USB devices and specific USB devices.
 
 ## Features
 
@@ -18,15 +18,15 @@ Knock is a Python tool that runs in the background and plays a sound when a USB 
 
 1. Run the installation script:
    ```bash
-   chmod +x install-knock-linux.sh
-   ./install-knock-linux.sh
+   chmod +x install-knocking-goose-linux.sh
+   ./install-knocking-goose-linux.sh
    ```
 
 ### Windows
 
 1. Run the installation script:
    ```bat
-   install-knock-windows.bat
+   install-knocking-goose-windows.bat
    ```
 
 ## Usage
@@ -35,20 +35,20 @@ Knock is a Python tool that runs in the background and plays a sound when a USB 
 
 Start the graphical interface by running:
 ```bash
-python3 knock_gui.py
+python3 knocking-goose-gui.py
 ```
 
 ### Terminal Interface
 
 Use the following commands:
 ```bash
-knock --help
-knock --man
+kg --help
+kg --man
 ```
 
 ## Configuration
 
-The configuration is stored in `config.json`. You can edit this file manually or use the graphical interface to change the settings.
+The configuration is stored in `kg_config.json`. You can edit this file manually or use the graphical interface to change the settings.
 
 ## License
 
