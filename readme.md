@@ -31,6 +31,16 @@ Knocking Goose is a Python tool that runs in the background and plays a sound wh
    sudo ./install-knocking-goose-linux.sh
    ```
 
+4. Change directory to the appropriate location:
+   ```bash
+   cd /usr/local/bin/
+   ```
+
+5. Run the application:
+   ```bash
+   python3 kg
+   ```
+
 ### Windows
 
 1. Run the installation script:
