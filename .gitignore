@@ -1,0 +1,5 @@
+# Ignore files that are not needed anymore
+knock.py
+knock.desktop
+install-knock-linux.sh
+knock_gui.py
