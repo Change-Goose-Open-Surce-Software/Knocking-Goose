@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Knock
+Comment=USB Device Sound Notifier
+Exec=python3 /usr/local/bin/knock
+Icon=knock-icon
+Terminal=false
+Type=Application
+Categories=Utility;System;
+X-GNOME-Autostart-enabled=true
