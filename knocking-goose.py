@@ -1,3 +1,4 @@
+sudo tee /usr/bin/kg > /dev/null << 'EOF'
 #!/usr/bin/env python3
 # knocking-goose.py
 import json
@@ -22,8 +23,8 @@ event_lock = threading.Lock()
 def load_config():
     config_file = os.path.expanduser('~/.config/kg_config.json')
     default_config = {
-        'disconnect_sound': None,  # Einheitlicher Disconnect-Sound
-        'device_connect_sounds': {}  # Gerätespezifische Connect-Sounds
+        'disconnect_sound': None,
+        'device_connect_sounds': {}
     }
     
     # Create config directory if it doesn't exist
@@ -32,8 +33,12 @@ def load_config():
         os.makedirs(config_dir)
     
     if os.path.exists(config_file):
-        with open(config_file, 'r') as f:
-            config = json.load(f)
+        try:
+            with open(config_file, 'r') as f:
+                config = json.load(f)
+        except (json.JSONDecodeError, ValueError):
+            print("Warning: Config file is corrupted, creating new one...")
+            config = {}
         
         # Migration: Convert old format to new format
         if 'general_sound_disconnect' in config or 'general_sound_connect' in config:
@@ -295,3 +300,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+EOF
+
+sudo chmod +x /usr/bin/kg
