@@ -44,8 +44,8 @@ Knocking Goose is a Python tool that runs in the background and plays a sound wh
 
 Start the graphical interface by running:
 ```bash
-cd /usr/local/bin/
-python3 knocking-goose-gui.py
+cd /usr/bin/
+python3 knocking-goose.py
 ```
 
 ### Terminal Interface
