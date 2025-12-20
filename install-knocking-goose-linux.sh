@@ -16,7 +16,7 @@ wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/Knock/ma
 # Install dependencies
 echo "Installing dependencies..."
 sudo apt-get update
-sudo apt-get install -y python3 python3-tk python3-pip
+sudo apt-get install -y python3 python3-tk python3-gi gir1.2-gstreamer-1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly
 
 # Copy files to the appropriate locations
 echo "Copying files..."
