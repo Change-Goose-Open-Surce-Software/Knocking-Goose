@@ -18,6 +18,11 @@ echo "Installing dependencies..."
 sudo apt-get update
 sudo apt-get install -y python3 python3-tk python3-gi gir1.2-gstreamer-1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly
 
+# Install pyudev using pip
+echo "Installing pyudev using pip..."
+sudo apt-get install -y python3-pip
+pip3 install pyudev
+
 # Copy files to the appropriate locations
 echo "Copying files..."
 sudo cp knocking-goose.py /usr/bin/kg
