@@ -6,4 +6,3 @@ Icon=knock-icon
 Terminal=false
 Type=Application
 Categories=Utility;System;
-X-GNOME-Autostart-enabled=true
