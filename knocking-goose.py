@@ -6,8 +6,13 @@ import sys
 import argparse
 import threading
 import time
-from playsound import playsound
+import gi
+gi.require_version('Gst', '1.0')
+from gi.repository import Gst
 import pyudev
+
+# Initialize GStreamer
+Gst.init(None)
 
 # Konfiguration laden oder erstellen
 def load_config():
@@ -28,7 +33,14 @@ def load_config():
 # Sound abspielen
 def play_sound(sound_file):
     if sound_file and os.path.exists(sound_file):
-        playsound(sound_file)
+        # Use GStreamer to play the sound
+        player = Gst.ElementFactory.make("playbin", "player")
+        player.set_property("uri", "file://" + sound_file)
+        player.set_state(Gst.State.PLAYING)
+        # Wait for the sound to finish playing
+        bus = player.get_bus()
+        bus.poll(Gst.MessageType.EOS, Gst.CLOCK_TIME_NONE)
+        player.set_state(Gst.State.NULL)
 
 # USB-Geräte überwachen (Beispiel für Linux mit pyudev)
 def monitor_usb():
