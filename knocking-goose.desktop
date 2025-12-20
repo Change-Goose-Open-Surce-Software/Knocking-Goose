@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Knocking Goose
 Comment=USB Device Sound Notifier
-Exec=python3 /usr/local/bin/kg
+Exec=python3 /usr/bin/kg
 Icon=/usr/share/icons/knocking-goose-icon.png
 Terminal=false
 Type=Application
