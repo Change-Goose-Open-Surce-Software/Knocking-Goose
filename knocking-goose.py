@@ -1,3 +1,5 @@
+# Erstelle eine neue Datei mit dem korrigierten Code
+sudo tee /usr/bin/kg > /dev/null << 'EOF'
 #!/usr/bin/env python3
 # knocking-goose.py
 import json
@@ -135,3 +137,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+EOF
+
+# Mache es ausführbar
+sudo chmod +x /usr/bin/kg
