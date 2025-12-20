@@ -13,15 +13,20 @@ wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/Knock/ma
 wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/Knock/main/knocking-goose.desktop -O knocking-goose.desktop
 wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/Knock/main/knocking-goose-icon.png -O knocking-goose-icon.png
 
-# Install dependencies
+# Install dependencies using apt only
 echo "Installing dependencies..."
 sudo apt-get update
-sudo apt-get install -y python3 python3-tk python3-gi gir1.2-gstreamer-1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly
-
-# Install pyudev using pip
-echo "Installing pyudev using pip..."
-sudo apt-get install -y python3-pip
-pip3 install pyudev
+sudo apt-get install -y \
+    python3 \
+    python3-tk \
+    python3-gi \
+    python3-pyudev \
+    gir1.2-gstreamer-1.0 \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-tools
 
 # Copy files to the appropriate locations
 echo "Copying files..."
@@ -38,3 +43,4 @@ mkdir -p ~/.config/autostart
 cp knocking-goose.desktop ~/.config/autostart/
 
 echo "Installation completed successfully."
+echo "You can now run 'kg' from the terminal or start 'Knocking Goose' from your application menu."
