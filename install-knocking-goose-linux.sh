@@ -18,6 +18,10 @@ echo "Installing dependencies..."
 sudo apt-get update
 sudo apt-get install -y python3 python3-tk python3-pip
 
+# Create directory for kg if it doesn't exist
+echo "Creating directory for kg if it doesn't exist..."
+sudo mkdir -p /usr/local/bin/
+
 # Copy files to the appropriate locations
 echo "Copying files..."
 sudo cp knocking-goose.py /usr/local/bin/kg
