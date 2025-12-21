@@ -429,13 +429,26 @@ def show_version():
     print("=" * 70)
     print("Knocking Goose - USB Device Sound Notifier")
     print("=" * 70)
-    print("\nCurrent Version: 3.0")
-    print("Release Date: 2025-12-21 23:45")
+    print("\nCurrent Version: 3.1")
+    print("Release Date: 2025-12-22 00:15")
     print("\n" + "=" * 70)
     print("VERSION HISTORY")
     print("=" * 70)
     
     versions = [
+        {
+            'version': '3.1',
+            'date': '2025-12-22 00:15',
+            'changes': [
+                'Improved autostart installation script',
+                'Support for all major Linux desktop environments',
+                'Added systemd user service as universal fallback',
+                'Support for: GNOME, KDE, XFCE, Cinnamon, MATE, Budgie, Deepin',
+                'Support for: Pantheon, i3, Sway, Openbox, Awesome WM, LXQt',
+                'Automatic detection of desktop environment',
+                'Better cleanup after installation'
+            ]
+        },
         {
             'version': '3.0',
             'date': '2025-12-21 23:45',
