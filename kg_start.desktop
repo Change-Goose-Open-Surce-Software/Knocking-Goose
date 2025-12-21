@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name=Knocking Goose Autostart
+Comment=Starts Knocking Goose USB Sound Notifier for all users
+Exec=/usr/bin/kg_start.sh
+Icon=/usr/share/icons/knocking-goose-icon.png
+Terminal=false
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=5
+X-KDE-autostart-after=panel
+X-MATE-Autostart-enabled=true
+StartupNotify=false
+Categories=System;Utility;
