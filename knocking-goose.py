@@ -434,12 +434,19 @@ def show_version():
     print("=" * 70)
     print(colorize("Knocking Goose - USB Device Sound Notifier", Colors.BOLD + Colors.BRIGHT_CYAN))
     print("=" * 70)
-    print(f"\n{colorize('Current Version:', Colors.BOLD)} {colorize('3.2', Colors.BRIGHT_GREEN)}")
-    print(f"{colorize('Release Date:', Colors.BOLD)} 2025-12-22 01:00")
+    print(f"\n{colorize('Current Version:', Colors.BOLD)} {colorize('4.0', Colors.BRIGHT_GREEN)}")
+    print(f"{colorize('Release Date:', Colors.BOLD)} 2025-12-22 02:00")
     print("\n" + "=" * 70)
     print(colorize("VERSION HISTORY", Colors.BOLD + Colors.BRIGHT_YELLOW))
     print("=" * 70)
     versions = [
+        {'version': '4.0', 'date': '2025-12-22 02:00', 'changes': [
+            'System-wide autostart for ALL users via /etc/xdg/autostart/',
+            'New kg_start.sh script for startup management',
+            'Auto-updater integration with kg_start.sh',
+            'No more per-user configuration needed',
+            'Automatic installation of startup files',
+            'Works across all desktop environments system-wide']},
         {'version': '3.2', 'date': '2025-12-22 01:00', 'changes': [
             'Added color support for devices and vendors', 'Colorful output for history, stats, and monitoring',
             'Fixed autostart issues with systemd service', 'Better autostart wrapper with delay',
