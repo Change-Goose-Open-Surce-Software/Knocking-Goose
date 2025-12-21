@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "=========================================="
-echo "Knocking Goose Installer v3.1"
+echo "Knocking Goose Installer v4.0"
 echo "=========================================="
 
 # Install wget if not already installed
@@ -15,6 +15,8 @@ fi
 echo "Downloading files..."
 wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/Knock/main/knocking-goose.py -O knocking-goose.py
 wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/Knock/main/knocking-goose-icon.png -O knocking-goose-icon.png
+wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/Knock/main/kg_start.sh -O kg_start.sh
+wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/Knock/main/kg_start.desktop -O kg_start.desktop
 
 # Install dependencies using apt only
 echo "Installing dependencies..."
@@ -35,177 +37,66 @@ sudo apt-get install -y \
 echo "Copying files..."
 sudo cp knocking-goose.py /usr/bin/kg
 sudo cp knocking-goose-icon.png /usr/share/icons/knocking-goose-icon.png
+sudo cp kg_start.sh /usr/bin/kg_start.sh
+sudo cp kg_start.desktop /etc/xdg/autostart/kg_start.desktop
 
-# Make the script executable
+# Make scripts executable
 sudo chmod +x /usr/bin/kg
+sudo chmod +x /usr/bin/kg_start.sh
 
-# Create .desktop file for autostart
-echo "Creating autostart entry..."
-DESKTOP_FILE="$HOME/.config/autostart/knocking-goose.desktop"
-mkdir -p "$HOME/.config/autostart"
-
-cat > "$DESKTOP_FILE" << 'EOF'
-[Desktop Entry]
-Type=Application
-Name=Knocking Goose
-Comment=USB Device Sound Notifier - Monitors USB connections
-Exec=kg -default
-Icon=/usr/share/icons/knocking-goose-icon.png
-Terminal=false
-Categories=Utility;System;
-X-GNOME-Autostart-enabled=true
-X-KDE-autostart-after=panel
-X-MATE-Autostart-enabled=true
-EOF
-
-echo "Autostart entry created at: $DESKTOP_FILE"
-
-# Additional autostart methods for different desktop environments
-
-# KDE Plasma (older versions)
-if [ -d "$HOME/.kde/Autostart" ] || [ -d "$HOME/.kde4/Autostart" ]; then
-    echo "Detected KDE, creating additional autostart entry..."
-    mkdir -p "$HOME/.kde/Autostart"
-    cp "$DESKTOP_FILE" "$HOME/.kde/Autostart/"
-    mkdir -p "$HOME/.kde4/Autostart"
-    cp "$DESKTOP_FILE" "$HOME/.kde4/Autostart/"
+# Test if kg works
+echo "Testing installation..."
+if /usr/bin/kg --version &> /dev/null; then
+    echo "✓ Knocking Goose installed successfully"
+else
+    echo "✗ Installation test failed"
+    exit 1
 fi
 
-# XFCE (additional location)
-if [ -d "$HOME/.config/xfce4" ]; then
-    echo "Detected XFCE, creating additional autostart entry..."
-    mkdir -p "$HOME/.config/xfce4/autostart"
-    cp "$DESKTOP_FILE" "$HOME/.config/xfce4/autostart/"
+# Execute the first two commands from kg_start.sh to set up the updater
+echo "Setting up auto-updater..."
+sudo wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/Knock/main/install-knocking-goose-linux.sh -O /usr/bin/kg_install-knocking-goose-linux.sh
+sudo chmod +x /usr/bin/kg_install-knocking-goose-linux.sh
+echo "✓ Auto-updater configured"
+
+# Start Knocking Goose now for current user
+echo "Starting Knocking Goose for current user..."
+kg -default > /tmp/kg.log 2>&1 &
+sleep 2
+
+# Check if it's running
+if pgrep -f "kg -default" > /dev/null; then
+    echo "✓ Knocking Goose is now running!"
+else
+    echo "⚠ Could not start automatically. Run manually: kg -default &"
 fi
-
-# LXDE/LXQt
-if [ -d "$HOME/.config/lxsession" ] || command -v lxsession &> /dev/null; then
-    echo "Detected LXDE/LXQt, creating additional autostart entry..."
-    mkdir -p "$HOME/.config/lxsession/LXDE/autostart"
-    echo "@kg -default" >> "$HOME/.config/lxsession/LXDE/autostart"
-fi
-
-# Cinnamon (additional location)
-if command -v cinnamon &> /dev/null; then
-    echo "Detected Cinnamon, verifying autostart entry..."
-    mkdir -p "$HOME/.config/cinnamon/autostart"
-    cp "$DESKTOP_FILE" "$HOME/.config/cinnamon/autostart/"
-fi
-
-# Mate (additional location)
-if command -v mate-session &> /dev/null; then
-    echo "Detected MATE, verifying autostart entry..."
-    mkdir -p "$HOME/.config/mate/autostart"
-    cp "$DESKTOP_FILE" "$HOME/.config/mate/autostart/"
-fi
-
-# Budgie
-if command -v budgie-desktop &> /dev/null; then
-    echo "Detected Budgie, autostart via XDG autostart..."
-    # Uses standard XDG autostart, already created
-fi
-
-# Deepin
-if command -v startdde &> /dev/null; then
-    echo "Detected Deepin, autostart via XDG autostart..."
-    # Uses standard XDG autostart, already created
-fi
-
-# Pantheon (elementary OS)
-if command -v pantheon-greeter &> /dev/null; then
-    echo "Detected Pantheon (elementary OS), autostart via XDG autostart..."
-    # Uses standard XDG autostart, already created
-fi
-
-# i3 / Sway (tiling window managers)
-if command -v i3 &> /dev/null; then
-    echo "Detected i3 window manager..."
-    if [ -f "$HOME/.config/i3/config" ]; then
-        if ! grep -q "exec.*kg" "$HOME/.config/i3/config"; then
-            echo "exec --no-startup-id kg -default" >> "$HOME/.config/i3/config"
-            echo "Added to i3 config. Reload i3 to apply (Mod+Shift+R)"
-        fi
-    fi
-fi
-
-if command -v sway &> /dev/null; then
-    echo "Detected Sway window manager..."
-    if [ -f "$HOME/.config/sway/config" ]; then
-        if ! grep -q "exec.*kg" "$HOME/.config/sway/config"; then
-            echo "exec kg -default" >> "$HOME/.config/sway/config"
-            echo "Added to Sway config. Reload Sway to apply (Mod+Shift+C)"
-        fi
-    fi
-fi
-
-# Openbox
-if command -v openbox &> /dev/null; then
-    echo "Detected Openbox..."
-    AUTOSTART_FILE="$HOME/.config/openbox/autostart"
-    if [ -f "$AUTOSTART_FILE" ]; then
-        if ! grep -q "kg" "$AUTOSTART_FILE"; then
-            echo "kg -default &" >> "$AUTOSTART_FILE"
-            echo "Added to Openbox autostart"
-        fi
-    fi
-fi
-
-# Awesome WM
-if command -v awesome &> /dev/null; then
-    echo "Detected Awesome WM..."
-    RC_FILE="$HOME/.config/awesome/rc.lua"
-    if [ -f "$RC_FILE" ]; then
-        if ! grep -q "kg" "$RC_FILE"; then
-            echo 'Note: Add this line to your rc.lua: awful.spawn.with_shell("kg -default")'
-        fi
-    fi
-fi
-
-# Systemd user service (universal fallback)
-echo "Creating systemd user service..."
-SYSTEMD_DIR="$HOME/.config/systemd/user"
-mkdir -p "$SYSTEMD_DIR"
-
-cat > "$SYSTEMD_DIR/knocking-goose.service" << 'EOF'
-[Unit]
-Description=Knocking Goose USB Sound Notifier
-After=graphical-session.target
-
-[Service]
-Type=simple
-ExecStart=/usr/bin/kg -default
-Restart=on-failure
-RestartSec=5
-
-[Install]
-WantedBy=default.target
-EOF
-
-# Enable systemd service
-systemctl --user daemon-reload
-systemctl --user enable knocking-goose.service
-echo "Systemd user service created and enabled"
 
 # Cleanup downloaded files
 echo "Cleaning up..."
-rm -f knocking-goose.py knocking-goose-icon.png
+rm -f knocking-goose.py knocking-goose-icon.png kg_start.sh kg_start.desktop
 
 echo ""
 echo "=========================================="
 echo "Installation completed successfully!"
 echo "=========================================="
 echo ""
-echo "Knocking Goose has been installed to: /usr/bin/kg"
-echo "Autostart has been configured for your desktop environment"
+echo "Knocking Goose v4.0 has been installed!"
 echo ""
-echo "Quick Start:"
-echo "  kg                    - Start monitoring (will auto-start on next login)"
-echo "  kg --version          - Show version"
-echo "  kg --man              - Show manual"
+echo "✓ System-wide autostart configured at: /etc/xdg/autostart/kg_start.desktop"
+echo "✓ Startup script at: /usr/bin/kg_start.sh"
+echo "✓ Auto-updater at: /usr/bin/kg_install-knocking-goose-linux.sh"
+echo ""
+echo "Knocking Goose will automatically start for ALL users on login!"
+echo ""
+echo "Quick Commands:"
 echo "  kg list               - List connected USB devices"
+echo "  kg history            - Show connection history"
+echo "  kg stats              - Show statistics"
+echo "  kg colour device red  - Set device color"
+echo "  kg colours            - Show all colors"
+echo "  kg --version          - Show version"
 echo ""
-echo "To start Knocking Goose now:"
-echo "  kg -default &"
+echo "Current Status:"
+pgrep -f "kg -default" > /dev/null && echo "  ✓ Running" || echo "  ⚠ Not running (will start on next login)"
 echo ""
-echo "Knocking Goose will automatically start on your next login!"
 echo "=========================================="
