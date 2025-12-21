@@ -7,6 +7,7 @@ import argparse
 import threading
 import time
 import subprocess
+from datetime import datetime, timedelta
 import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst
@@ -38,7 +39,8 @@ def load_config():
             }
         },
         'active_profile': 'default',
-        'blacklist': []  # NEU: Blacklist für Geräte
+        'blacklist': [],  # NEU: Blacklist für Geräte
+        'history': []  # NEU: Geräte-Historie
     }
     
     # Create config directory if it doesn't exist
@@ -175,6 +177,9 @@ def monitor_usb(hide_connects=False, hide_disconnects=False, hide_default=False,
             if vendor_id:
                 print(f"  Vendor ID: {vendor_id}")
             
+            # Event loggen
+            log_event(device_id, 'add', vendor_id)
+            
             # Sound abspielen: Priorität: Gerät > Hersteller > Default
             sound_file = None
             if device_id in config['device_connect_sounds']:
@@ -192,6 +197,10 @@ def monitor_usb(hide_connects=False, hide_disconnects=False, hide_default=False,
             if hide_disconnects:
                 return
             print(f"USB device disconnected: {device_id}")
+            
+            # Event loggen
+            log_event(device_id, 'remove', vendor_id)
+            
             # Einheitlicher Disconnect-Sound
             sound_file = config['disconnect_sound']
             if sound_file:
@@ -300,6 +309,182 @@ def list_devices():
     
     print("=" * 70 + "\n")
 
+# Event zur Historie hinzufügen
+def log_event(device_id, action, vendor_id=None):
+    config = load_config()
+    
+    event = {
+        'timestamp': datetime.now().isoformat(),
+        'device': device_id,
+        'action': action,
+        'vendor': vendor_id
+    }
+    
+    if 'history' not in config:
+        config['history'] = []
+    
+    config['history'].append(event)
+    
+    # Nur letzte 1000 Events behalten
+    if len(config['history']) > 1000:
+        config['history'] = config['history'][-1000:]
+    
+    save_config(config)
+
+# Historie anzeigen
+def show_history(days=1):
+    config = load_config()
+    history = config.get('history', [])
+    
+    if not history:
+        print("No history available")
+        return
+    
+    cutoff = datetime.now() - timedelta(days=days)
+    
+    print("\n" + "=" * 70)
+    print(f"USB Device History (last {days} day{'s' if days > 1 else ''})")
+    print("=" * 70)
+    
+    for event in reversed(history):
+        event_time = datetime.fromisoformat(event['timestamp'])
+        if event_time >= cutoff:
+            action_str = "CONNECTED   " if event['action'] == 'add' else "DISCONNECTED"
+            time_str = event_time.strftime("%Y-%m-%d %H:%M:%S")
+            device_str = event['device']
+            vendor_str = f" (Vendor: {event.get('vendor', 'N/A')})" if event.get('vendor') else ""
+            print(f"{time_str} | {action_str} | {device_str}{vendor_str}")
+    
+    print("=" * 70 + "\n")
+
+# Statistiken anzeigen
+def show_stats():
+    config = load_config()
+    history = config.get('history', [])
+    
+    if not history:
+        print("No statistics available")
+        return
+    
+    stats = {}
+    
+    for event in history:
+        device = event['device']
+        action = event['action']
+        
+        if device not in stats:
+            stats[device] = {'connects': 0, 'disconnects': 0}
+        
+        if action == 'add':
+            stats[device]['connects'] += 1
+        else:
+            stats[device]['disconnects'] += 1
+    
+    print("\n" + "=" * 70)
+    print("USB Device Statistics")
+    print("=" * 70)
+    print(f"{'Device':<40} {'Connects':<12} {'Disconnects':<12}")
+    print("-" * 70)
+    
+    for device, counts in sorted(stats.items(), key=lambda x: x[1]['connects'], reverse=True):
+        print(f"{device:<40} {counts['connects']:<12} {counts['disconnects']:<12}")
+    
+    print("=" * 70 + "\n")
+
+# Sound oder Action löschen
+def remove_config(config_type, device_name):
+    config = load_config()
+    
+    if config_type == 'sound':
+        if device_name == '!':
+            config['disconnect_sound'] = None
+            print("Disconnect sound removed")
+        elif device_name.startswith('vendor:'):
+            vendor_id = device_name.split(':', 1)[1]
+            if vendor_id in config.get('vendor_connect_sounds', {}):
+                del config['vendor_connect_sounds'][vendor_id]
+                print(f"Vendor sound for '{vendor_id}' removed")
+            else:
+                print(f"No sound configured for vendor '{vendor_id}'")
+                return
+        else:
+            if device_name in config.get('device_connect_sounds', {}):
+                del config['device_connect_sounds'][device_name]
+                print(f"Sound for '{device_name}' removed")
+            else:
+                print(f"No sound configured for '{device_name}'")
+                return
+    elif config_type == 'action':
+        if device_name in config.get('device_actions', {}):
+            del config['device_actions'][device_name]
+            print(f"Action for '{device_name}' removed")
+        else:
+            print(f"No action configured for '{device_name}'")
+            return
+    
+    save_config(config)
+
+# Version mit Changelog anzeigen
+def show_version():
+    print("=" * 70)
+    print("Knocking Goose - USB Device Sound Notifier")
+    print("=" * 70)
+    print("\nCurrent Version: 3.0")
+    print("Release Date: 2025-12-21 23:45")
+    print("\n" + "=" * 70)
+    print("VERSION HISTORY")
+    print("=" * 70)
+    
+    versions = [
+        {
+            'version': '3.0',
+            'date': '2025-12-21 23:45',
+            'changes': [
+                'Added vendor-specific sounds (kg change-sound vendor:XXXX)',
+                'Added action scripts on device connect (kg action)',
+                'Added device history tracking (kg history)',
+                'Added device statistics (kg stats)',
+                'Added blacklist functionality (kg blacklist)',
+                'Added volume control (kg volume)',
+                'Added debug mode (--debug)',
+                'Added sound testing (kg test-sound)',
+                'Added device listing (kg list)',
+                'Added remove command for sounds/actions (kg remove)',
+                'Improved duplicate event filtering'
+            ]
+        },
+        {
+            'version': '2.0',
+            'date': '2025-12-21 22:30',
+            'changes': [
+                'Complete rewrite of sound system',
+                'Unified disconnect sound for all devices',
+                'Device-specific connect sounds',
+                'Filter options: -d, -c, -default, -device, -all',
+                'Better duplicate event handling',
+                'Migration from old config format'
+            ]
+        },
+        {
+            'version': '1.0',
+            'date': '2025-12-21 20:00',
+            'changes': [
+                'Initial release',
+                'Basic USB device monitoring',
+                'Sound playback on connect/disconnect',
+                'Config file support'
+            ]
+        }
+    ]
+    
+    for v in versions:
+        print(f"\nVersion {v['version']} - {v['date']}")
+        print("-" * 70)
+        for change in v['changes']:
+            print(f"  • {change}")
+    
+    print("\n" + "=" * 70)
+
 # Sound testen
 def test_sound(device_name):
     config = load_config()
@@ -330,7 +515,7 @@ def main():
         add_help=True
     )
     parser.add_argument('--man', action='store_true', help='Show manual')
-    parser.add_argument('--version', action='version', version='Knocking Goose 3.0')
+    parser.add_argument('--version', action='store_true', help='Show version information')
     parser.add_argument('--debug', action='store_true', help='Enable debug mode')
     parser.add_argument('-d', '--hide-disconnects', action='store_true', help='Hide disconnect messages')
     parser.add_argument('-c', '--hide-connects', action='store_true', help='Hide connect messages')
@@ -356,9 +541,12 @@ def main():
         print("    kg [OPTIONS]")
         print("    kg change-sound [DEVICE|vendor:XXXX|!] /path/to/sound.mp3")
         print("    kg action DEVICE /path/to/script.sh")
+        print("    kg remove [sound|action] [DEVICE|vendor:XXXX|!]")
         print("    kg blacklist DEVICE")
         print("    kg volume NUMBER")
         print("    kg list")
+        print("    kg history [DAYS]")
+        print("    kg stats")
         print("    kg test-sound [DEVICE|vendor:XXXX|!]")
         print("\nCOMMANDS")
         print("    change-sound [DEVICE|vendor:XXXX|!] /path/to/sound.mp3")
@@ -372,6 +560,14 @@ def main():
         print("        Execute script when device connects")
         print("        Example:")
         print("            kg action 8BitDo_IDLE /home/user/gaming.sh")
+        print("")
+        print("    remove [sound|action] [DEVICE|vendor:XXXX|!]")
+        print("        Remove sound or action configuration")
+        print("        Examples:")
+        print("            kg remove sound 8BitDo_IDLE")
+        print("            kg remove sound vendor:1532")
+        print("            kg remove sound !")
+        print("            kg remove action 8BitDo_IDLE")
         print("")
         print("    blacklist DEVICE")
         print("        Add device to blacklist (no sounds/actions)")
@@ -388,6 +584,15 @@ def main():
         print("")
         print("    list")
         print("        Show all connected USB devices")
+        print("")
+        print("    history [DAYS]")
+        print("        Show device connection history (default: 1 day)")
+        print("        Examples:")
+        print("            kg history")
+        print("            kg history 7")
+        print("")
+        print("    stats")
+        print("        Show device connection statistics")
         print("")
         print("    test-sound [DEVICE|vendor:XXXX|!]")
         print("        Test sound without connecting device")
@@ -409,6 +614,10 @@ def main():
         print("\nAUTHOR")
         print("    Change-Goose-Open-Source-Software")
         print("=" * 70)
+        return
+    
+    if args.version:
+        show_version()
         return
 
     # Command handling
@@ -440,6 +649,21 @@ def main():
         set_volume(args.args[0])
     elif args.command == 'list':
         list_devices()
+    elif args.command == 'history':
+        days = int(args.args[0]) if args.args else 1
+        show_history(days)
+    elif args.command == 'stats':
+        show_stats()
+    elif args.command == 'remove':
+        if len(args.args) < 2:
+            print("Error: remove requires [sound|action] and [DEVICE|vendor:XXXX|!]")
+            sys.exit(1)
+        config_type = args.args[0]
+        device_name = args.args[1]
+        if config_type not in ['sound', 'action']:
+            print("Error: first argument must be 'sound' or 'action'")
+            sys.exit(1)
+        remove_config(config_type, device_name)
     elif args.command == 'test-sound':
         if len(args.args) < 1:
             print("Error: test-sound requires [DEVICE|vendor:XXXX|!]")
