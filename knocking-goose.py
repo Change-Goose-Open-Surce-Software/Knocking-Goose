@@ -229,7 +229,7 @@ def print_version():
 
 {Colors.BOLD}Copyright:{Colors.RESET}
     Change-Goose Open Source Software
-    Licensed under Open Source License
+    Licensed under The MIT License
 """
     print(version_text)
 
