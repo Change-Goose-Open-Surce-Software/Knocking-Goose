@@ -1,4 +1,4 @@
-# 🦆 Knocking Goose - USB Device Sound Notifier
+# 🪿 Knocking Goose - USB Device Sound Notifier
 
 **The most feature-rich, open-source USB notification tool for Linux**
 
@@ -366,4 +366,4 @@ If you find Knocking Goose useful, please consider giving it a ⭐ on GitHub!
 
 ---
 
-**Made with 🦆 by the Knocking Goose Team**
+**🪿Knocking Goose powerded by Change Goose with help from Claude Sonnet 4.5 from Anthropic**
