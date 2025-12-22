@@ -434,19 +434,12 @@ def show_version():
     print("=" * 70)
     print(colorize("Knocking Goose - USB Device Sound Notifier", Colors.BOLD + Colors.BRIGHT_CYAN))
     print("=" * 70)
-    print(f"\n{colorize('Current Version:', Colors.BOLD)} {colorize('4.0', Colors.BRIGHT_GREEN)}")
-    print(f"{colorize('Release Date:', Colors.BOLD)} 2025-12-22 02:00")
+    print(f"\n{colorize('Current Version:', Colors.BOLD)} {colorize('3.2', Colors.BRIGHT_GREEN)}")
+    print(f"{colorize('Release Date:', Colors.BOLD)} 2025-12-22 01:00")
     print("\n" + "=" * 70)
     print(colorize("VERSION HISTORY", Colors.BOLD + Colors.BRIGHT_YELLOW))
     print("=" * 70)
     versions = [
-        {'version': '4.0', 'date': '2025-12-22 02:00', 'changes': [
-            'System-wide autostart for ALL users via /etc/xdg/autostart/',
-            'New kg_start.sh script for startup management',
-            'Auto-updater integration with kg_start.sh',
-            'No more per-user configuration needed',
-            'Automatic installation of startup files',
-            'Works across all desktop environments system-wide']},
         {'version': '3.2', 'date': '2025-12-22 01:00', 'changes': [
             'Added color support for devices and vendors', 'Colorful output for history, stats, and monitoring',
             'Fixed autostart issues with systemd service', 'Better autostart wrapper with delay',
@@ -485,7 +478,20 @@ def test_sound(device_name):
 
 def main():
     global debug_mode
-    parser = argparse.ArgumentParser(description='Knocking Goose - USB Device Sound Notifier', add_help=True)
+    parser = argparse.ArgumentParser(
+        description='Knocking Goose v4.0 - USB Device Sound Notifier',
+        epilog=f"{colorize('Examples:', Colors.BOLD)}\n"
+               f"  kg change-sound vendor:1532 /sounds/razer.mp3    Set vendor sound\n"
+               f"  kg change-sound {colorize('!', Colors.BRIGHT_RED)} /sounds/disconnect.wav       Set disconnect sound\n"
+               f"  kg colour default red                            Set device color\n"
+               f"  kg action 8BitDo ~/.scripts/gaming.sh            Run script on connect\n"
+               f"  kg list                                          Show devices\n"
+               f"  kg history 7                                     Last 7 days\n"
+               f"\nFor detailed manual: kg --man\n"
+               f"GitHub: https://github.com/Change-Goose-Open-Surce-Software/Knock",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        add_help=True
+    )
     parser.add_argument('--man', action='store_true', help='Show manual')
     parser.add_argument('--version', action='store_true', help='Show version information')
     parser.add_argument('--debug', action='store_true', help='Enable debug mode')
@@ -502,18 +508,195 @@ def main():
         debug_mode = True
         print(colorize("DEBUG MODE ENABLED", Colors.BRIGHT_YELLOW))
     if args.man:
-        print("=" * 70)
-        print(colorize("Manual for Knocking Goose", Colors.BOLD + Colors.BRIGHT_CYAN))
-        print("=" * 70)
-        print("\nNAME\n    kg - Knocking Goose USB Device Sound Notifier")
-        print("\nCOMMANDS")
-        print("    " + colorize("colour [DEVICE|vendor:XXXX] COLOR", Colors.BRIGHT_GREEN))
-        print("        Set color for device or vendor")
-        print("        Examples: kg colour default red, kg colour vendor:1532 gray")
-        print("\n    " + colorize("colours", Colors.BRIGHT_GREEN))
-        print("        Show all available colors")
-        print("\nFor full manual: kg --help")
-        print("=" * 70)
+        print("=" * 80)
+        print(colorize("KNOCKING GOOSE - MANUAL", Colors.BOLD + Colors.BRIGHT_CYAN))
+        print("=" * 80)
+        print("\n" + colorize("NAME", Colors.BOLD))
+        print("    kg - Knocking Goose USB Device Sound Notifier")
+        print("\n" + colorize("SYNOPSIS", Colors.BOLD))
+        print("    kg [OPTIONS]")
+        print("    kg COMMAND [ARGUMENTS]")
+        
+        print("\n" + colorize("DESCRIPTION", Colors.BOLD))
+        print("    Knocking Goose monitors USB device connections and plays customizable")
+        print("    sounds when devices are connected or disconnected. It supports")
+        print("    vendor-specific sounds, device colors, statistics, and automation.")
+        
+        print("\n" + colorize("SOUND MANAGEMENT", Colors.BOLD + Colors.BRIGHT_GREEN))
+        print("\n  " + colorize("change-sound [DEVICE|vendor:XXXX|!] /path/to/sound.mp3", Colors.BRIGHT_GREEN))
+        print("    Set sound for device, vendor, or disconnect")
+        print("    " + colorize("Note:", Colors.BOLD) + " Use " + colorize("!", Colors.BRIGHT_RED) + " to set the disconnect sound")
+        print("\n    Examples:")
+        print("      kg change-sound 8BitDo_IDLE /sounds/gamepad.mp3")
+        print("        Sets connect sound for specific device")
+        print("\n      kg change-sound vendor:1532 /sounds/razer.mp3")
+        print("        Sets connect sound for ALL Razer devices (vendor ID 1532)")
+        print("\n      kg change-sound " + colorize("!", Colors.BRIGHT_RED) + " /sounds/disconnect.wav")
+        print("        Sets the universal disconnect sound for ALL devices")
+        
+        print("\n  " + colorize("test-sound [DEVICE|vendor:XXXX|!]", Colors.BRIGHT_GREEN))
+        print("    Test sound without connecting device")
+        print("    Examples:")
+        print("      kg test-sound 8BitDo_IDLE")
+        print("      kg test-sound vendor:1532")
+        print("      kg test-sound " + colorize("!", Colors.BRIGHT_RED) + "  # Test disconnect sound")
+        
+        print("\n  " + colorize("volume NUMBER", Colors.BRIGHT_GREEN))
+        print("    Set volume (0-100)")
+        print("    Examples:")
+        print("      kg volume 50    # 50% volume")
+        print("      kg volume 0     # Mute")
+        
+        print("\n  " + colorize("remove sound [DEVICE|vendor:XXXX|!]", Colors.BRIGHT_GREEN))
+        print("    Remove sound configuration")
+        print("    Examples:")
+        print("      kg remove sound 8BitDo_IDLE")
+        print("      kg remove sound vendor:1532")
+        print("      kg remove sound " + colorize("!", Colors.BRIGHT_RED) + "  # Remove disconnect sound")
+        
+        print("\n" + colorize("COLOR MANAGEMENT", Colors.BOLD + Colors.BRIGHT_MAGENTA))
+        print("\n  " + colorize("colour [DEVICE|vendor:XXXX] COLOR", Colors.BRIGHT_MAGENTA))
+        print("    Set color for device or vendor (also: color)")
+        print("    Available colors: black, red, green, yellow, blue, magenta, cyan,")
+        print("                      white, gray/grey, bright_*, orange, purple, pink, lime")
+        print("    Examples:")
+        print("      kg colour default red")
+        print("      kg colour vendor:1532 gray      # All Razer devices gray")
+        print("      kg colour 8BitDo_IDLE white")
+        
+        print("\n  " + colorize("colours", Colors.BRIGHT_MAGENTA))
+        print("    Show all available colors with visual examples")
+        
+        print("\n  " + colorize("remove colour [DEVICE|vendor:XXXX]", Colors.BRIGHT_MAGENTA))
+        print("    Remove color configuration")
+        
+        print("\n" + colorize("AUTOMATION", Colors.BOLD + Colors.BRIGHT_YELLOW))
+        print("\n  " + colorize("action DEVICE /path/to/script.sh", Colors.BRIGHT_YELLOW))
+        print("    Execute script when device connects")
+        print("    " + colorize("Note:", Colors.BOLD) + " Script receives device ID as first argument")
+        print("    Examples:")
+        print("      kg action 8BitDo_IDLE /home/user/start-gaming.sh")
+        print("        Starts gaming software when controller connects")
+        print("\n      kg action SanDisk_USB /home/user/backup.sh")
+        print("        Runs backup when USB stick connects")
+        
+        print("\n  " + colorize("remove action DEVICE", Colors.BRIGHT_YELLOW))
+        print("    Remove action configuration")
+        
+        print("\n" + colorize("DEVICE MANAGEMENT", Colors.BOLD + Colors.BRIGHT_BLUE))
+        print("\n  " + colorize("list", Colors.BRIGHT_BLUE))
+        print("    Show all connected USB devices with details")
+        print("    Displays: Device ID, Vendor, Model, Vendor ID")
+        
+        print("\n  " + colorize("blacklist DEVICE", Colors.BRIGHT_BLUE))
+        print("    Add device to blacklist (no sounds/actions will trigger)")
+        print("    Example:")
+        print("      kg blacklist default    # Ignore 'default' devices")
+        
+        print("\n  " + colorize("blacklist --remove DEVICE", Colors.BRIGHT_BLUE))
+        print("    Remove device from blacklist")
+        
+        print("\n" + colorize("HISTORY & STATISTICS", Colors.BOLD + Colors.BRIGHT_CYAN))
+        print("\n  " + colorize("history [DAYS]", Colors.BRIGHT_CYAN))
+        print("    Show device connection history (default: 1 day)")
+        print("    Examples:")
+        print("      kg history      # Last 24 hours")
+        print("      kg history 7    # Last 7 days")
+        print("      kg history 30   # Last 30 days")
+        
+        print("\n  " + colorize("stats", Colors.BRIGHT_CYAN))
+        print("    Show device connection statistics")
+        print("    Displays total connects and disconnects per device")
+        
+        print("\n" + colorize("MONITORING OPTIONS", Colors.BOLD + Colors.BRIGHT_WHITE))
+        print("\n  " + colorize("kg", Colors.BRIGHT_WHITE))
+        print("    Start monitoring (shows all events)")
+        
+        print("\n  " + colorize("kg -default", Colors.BRIGHT_WHITE))
+        print("    Hide 'default' devices (recommended for cleaner output)")
+        
+        print("\n  " + colorize("kg -d", Colors.BRIGHT_WHITE) + " or " + colorize("kg --hide-disconnects", Colors.BRIGHT_WHITE))
+        print("    Hide disconnect messages")
+        
+        print("\n  " + colorize("kg -c", Colors.BRIGHT_WHITE) + " or " + colorize("kg --hide-connects", Colors.BRIGHT_WHITE))
+        print("    Hide connect messages")
+        
+        print("\n  " + colorize("kg -device", Colors.BRIGHT_WHITE) + " or " + colorize("kg --hide-devices", Colors.BRIGHT_WHITE))
+        print("    Show ONLY 'default' devices (hide all named devices)")
+        
+        print("\n  " + colorize("kg -all", Colors.BRIGHT_WHITE) + " or " + colorize("kg --show-all", Colors.BRIGHT_WHITE))
+        print("    Show all events (including simultaneous duplicates)")
+        
+        print("\n  " + colorize("kg --debug", Colors.BRIGHT_WHITE))
+        print("    Enable debug mode (shows detailed USB events)")
+        
+        print("\n" + colorize("INFORMATION", Colors.BOLD + Colors.BRIGHT_GREEN))
+        print("\n  " + colorize("kg --help", Colors.BRIGHT_GREEN))
+        print("    Show quick help with all commands")
+        
+        print("\n  " + colorize("kg --man", Colors.BRIGHT_GREEN))
+        print("    Show this detailed manual")
+        
+        print("\n  " + colorize("kg --version", Colors.BRIGHT_GREEN))
+        print("    Show version information and changelog")
+        
+        print("\n" + colorize("SPECIAL SYMBOLS", Colors.BOLD + Colors.BRIGHT_RED))
+        print("\n  " + colorize("!", Colors.BRIGHT_RED) + " (Exclamation Mark)")
+        print("    Represents the universal disconnect sound")
+        print("    Used in: change-sound, test-sound, remove sound")
+        print("    Example: kg change-sound " + colorize("!", Colors.BRIGHT_RED) + " /path/to/disconnect.wav")
+        
+        print("\n  " + colorize("vendor:XXXX", Colors.BRIGHT_CYAN))
+        print("    Represents all devices from vendor with ID XXXX")
+        print("    Find vendor IDs with: kg list")
+        print("    Example: kg change-sound vendor:1532 /sounds/razer.mp3")
+        
+        print("\n" + colorize("CONFIGURATION FILE", Colors.BOLD))
+        print("    Location: ~/.config/kg_config.json")
+        print("    Format: JSON")
+        print("    Manual editing supported but not recommended")
+        
+        print("\n" + colorize("AUTOSTART", Colors.BOLD))
+        print("    System-wide: /etc/xdg/autostart/kg_start.desktop")
+        print("    Startup script: /usr/bin/kg_start.sh")
+        print("    Runs for ALL users automatically on login")
+        
+        print("\n" + colorize("EXAMPLES", Colors.BOLD + Colors.BRIGHT_YELLOW))
+        print("\n  " + colorize("Gaming Setup:", Colors.BOLD))
+        print("    kg change-sound vendor:2dc8 ~/sounds/controller.mp3")
+        print("    kg colour vendor:2dc8 lime")
+        print("    kg action 8BitDo_IDLE ~/.scripts/start-steam.sh")
+        
+        print("\n  " + colorize("Professional Use:", Colors.BOLD))
+        print("    kg volume 0                    # Mute during work")
+        print("    kg blacklist default           # Ignore internal devices")
+        print("    kg history 30 > audit.txt      # Export audit log")
+        
+        print("\n  " + colorize("System Monitoring:", Colors.BOLD))
+        print("    kg --debug > /var/log/usb.log  # Log all events")
+        print("    kg stats                       # Review statistics")
+        
+        print("\n" + colorize("PRIORITY SYSTEM", Colors.BOLD))
+        print("    Sounds: Device-specific > Vendor-specific > None")
+        print("    Colors: Device-specific > Vendor-specific > White (default)")
+        print("    Disconnect: Always uses universal disconnect sound (" + colorize("!", Colors.BRIGHT_RED) + ")")
+        
+        print("\n" + colorize("TIPS & TRICKS", Colors.BOLD + Colors.BRIGHT_MAGENTA))
+        print("  • Use 'kg list' to find device and vendor IDs")
+        print("  • Set vendor sounds for brands you frequently use")
+        print("  • Use colors to quickly identify device types")
+        print("  • Combine filters: kg -default -d (hide default & disconnects)")
+        print("  • Test sounds before setting: kg test-sound DEVICE")
+        print("  • Review history regularly: kg history 7")
+        
+        print("\n" + colorize("SEE ALSO", Colors.BOLD))
+        print("    lsusb(8), udev(7)")
+        print("    GitHub: https://github.com/Change-Goose-Open-Surce-Software/Knock")
+        
+        print("\n" + colorize("AUTHOR", Colors.BOLD))
+        print("    Change-Goose-Open-Source-Software")
+        
+        print("\n" + "=" * 80)
         return
     if args.version:
         show_version()
