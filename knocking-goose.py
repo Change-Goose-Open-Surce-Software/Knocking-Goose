@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# knocking-goose.py v5.0
+# knocking-goose.py v4.0
 import json
 import os
 import sys
@@ -101,7 +101,7 @@ def load_config():
         
         # Migration from v4.0
         if 'disconnect_sound' in config or 'device_connect_sounds' in config:
-            print("Migrating config from v4.0 to v5.0...")
+            print("Migrating config from v4.0 to v4.0...")
             new_config = default_config.copy()
             
             # Migrate disconnect sound
@@ -322,7 +322,7 @@ def monitor_usb(hide_connects=False, hide_disconnects=False, hide_default=False,
             handle_device_event('remove', device)
 
 def change_sound(device_name, sound_path, connect=True, disconnect=False):
-    """Set sound with new v5.0 syntax"""
+    """Set sound with new v4.0 syntax"""
     config = load_config()
     
     if not os.path.exists(sound_path):
@@ -591,13 +591,13 @@ def show_version():
     print("=" * 70)
     print(colorize("Knocking Goose - USB Device Sound Notifier", Colors.BOLD + Colors.BRIGHT_CYAN))
     print("=" * 70)
-    print(f"\n{colorize('Current Version:', Colors.BOLD)} {colorize('5.0', Colors.BRIGHT_GREEN)}")
+    print(f"\n{colorize('Current Version:', Colors.BOLD)} {colorize('4.0', Colors.BRIGHT_GREEN)}")
     print(f"{colorize('Release Date:', Colors.BOLD)} 2025-12-22 03:00")
     print("\n" + "=" * 70)
     print(colorize("VERSION HISTORY", Colors.BOLD + Colors.BRIGHT_YELLOW))
     print("=" * 70)
     versions = [
-        {'version': '5.0', 'date': '2025-12-22 03:00', 'changes': [
+        {'version': '4.0', 'date': '2025-12-22 03:00', 'changes': [
             'NEW: kg update command - auto-update via kg_start.sh',
             'NEW: Wildcard support - use * in device/vendor names',
             'NEW: -connect and -disconnect flags for change-sound',
@@ -637,7 +637,7 @@ def test_sound(device_name, event_type='connect'):
 def main():
     global debug_mode
     parser = argparse.ArgumentParser(
-        description='Knocking Goose v5.0 - USB Device Sound Notifier',
+        description='Knocking Goose v4.0 - USB Device Sound Notifier',
         epilog=f"{colorize('Examples:', Colors.BOLD)}\n"
                f"  kg change-sound -connect -disconnect device /sound.mp3\n"
                f"  kg change-sound -disconnect /sounds/disconnect.wav\n"
@@ -747,7 +747,7 @@ def main():
         if os.path.exists(SOUND_START):
             play_sound(SOUND_START, load_config().get('volume', 100))
         
-        print(colorize("Starting Knocking Goose v5.0...", Colors.BRIGHT_CYAN))
+        print(colorize("Starting Knocking Goose v4.0...", Colors.BRIGHT_CYAN))
         config = load_config()
         print(f"Volume: {config.get('volume', 100)}%")
         monitor_thread = threading.Thread(target=monitor_usb, args=(args.hide_connects, args.hide_disconnects, args.hide_default, args.hide_devices, args.show_all))
