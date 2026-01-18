@@ -32,14 +32,7 @@ Knocking Goose monitors USB device connections and plays customizable sounds whe
 ### Linux (Debian/Ubuntu/Kali)
 
 ```bash
-# Download installer
-wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/Knock/main/install-knocking-goose-linux.sh
-
-# Make executable
-chmod +x install-knocking-goose-linux.sh
-
-# Run installer (requires sudo)
-sudo ./install-knocking-goose-linux.sh
+wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/Knock/main/install-knocking-goose-linux.sh && chmod +x install-knocking-goose-linux.sh && sudo ./install-knocking-goose-linux.sh
 ```
 
 **That's it!** Knocking Goose will:
