@@ -13,10 +13,10 @@ fi
 
 # Download files using wget
 echo "Downloading files..."
-wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/Knock/main/knocking-goose.py -O knocking-goose.py
-wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/Knock/main/knocking-goose-icon.png -O knocking-goose-icon.png
-wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/Knock/main/kg_start.sh -O kg_start.sh
-wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/Knock/main/kg_start.desktop -O kg_start.desktop
+wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/Knocking-Goose/main/knocking-goose.py -O knocking-goose.py
+wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/Knocking-Goose/main/knocking-goose-icon.png -O knocking-goose-icon.png
+wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/Knocking-Goose/main/kg_start.sh -O kg_start.sh
+wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/Knocking-Goose/main/kg_start.desktop -O kg_start.desktop
 
 # Install dependencies using apt only
 echo "Installing dependencies..."
@@ -55,7 +55,7 @@ fi
 
 # Execute the first two commands from kg_start.sh to set up the updater
 echo "Setting up auto-updater..."
-sudo wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/Knock/main/install-knocking-goose-linux.sh -O /usr/bin/kg_install-knocking-goose-linux.sh
+sudo wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/Knocking-Goose/main/install-knocking-goose-linux.sh -O /usr/bin/kg_install-knocking-goose-linux.sh
 sudo chmod +x /usr/bin/kg_install-knocking-goose-linux.sh
 echo "✓ Auto-updater configured"
 
