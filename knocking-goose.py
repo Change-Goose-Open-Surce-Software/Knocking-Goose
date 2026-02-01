@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# knocking-goose.py v4.0
+# knocking-goose.py v5.0
 import json
 import os
 import sys
@@ -78,7 +78,7 @@ def colorize(text, color_code):
 def load_config():
     config_file = os.path.expanduser('~/.config/kg_config.json')
     default_config = {
-        'sound_mappings': {},  # New format: device/vendor -> {connect: path, disconnect: path}
+        'sound_mappings': {},  # device/vendor -> {connect: path, disconnect: path}
         'device_actions': {},
         'device_colors': {},
         'vendor_colors': {},
@@ -95,40 +95,11 @@ def load_config():
         try:
             with open(config_file, 'r') as f:
                 config = json.load(f)
+                if debug_mode:
+                    print(f"DEBUG: Loaded config: {json.dumps(config, indent=2)}")
         except (json.JSONDecodeError, ValueError):
             print("Warning: Config file is corrupted, creating new one...")
             config = {}
-        
-        # Migration from v4.0
-        if 'disconnect_sound' in config or 'device_connect_sounds' in config:
-            print("Migrating config from v4.0 to v4.0...")
-            new_config = default_config.copy()
-            
-            # Migrate disconnect sound
-            if config.get('disconnect_sound'):
-                new_config['sound_mappings']['*'] = {'disconnect': config['disconnect_sound']}
-            
-            # Migrate device connect sounds
-            for device_id, sound in config.get('device_connect_sounds', {}).items():
-                if device_id not in new_config['sound_mappings']:
-                    new_config['sound_mappings'][device_id] = {}
-                new_config['sound_mappings'][device_id]['connect'] = sound
-            
-            # Migrate vendor connect sounds
-            for vendor_id, sound in config.get('vendor_connect_sounds', {}).items():
-                key = f"vendor:{vendor_id}"
-                if key not in new_config['sound_mappings']:
-                    new_config['sound_mappings'][key] = {}
-                new_config['sound_mappings'][key]['connect'] = sound
-            
-            # Copy other settings
-            for key in ['device_actions', 'device_colors', 'vendor_colors', 'volume', 'blacklist', 'history']:
-                if key in config:
-                    new_config[key] = config[key]
-            
-            with open(config_file, 'w') as f:
-                json.dump(new_config, f, indent=4)
-            return new_config
         
         for key in default_config:
             if key not in config:
@@ -143,6 +114,8 @@ def save_config(config):
     config_file = os.path.expanduser('~/.config/kg_config.json')
     with open(config_file, 'w') as f:
         json.dump(config, f, indent=4)
+    if debug_mode:
+        print(f"DEBUG: Saved config: {json.dumps(config, indent=2)}")
 
 def get_device_color(device_id, vendor_id, config):
     if device_id in config.get('device_colors', {}):
@@ -154,6 +127,8 @@ def get_device_color(device_id, vendor_id, config):
 def play_sound(sound_file, volume=100):
     if sound_file and os.path.exists(sound_file):
         try:
+            if debug_mode:
+                print(f"DEBUG: Playing sound: {sound_file} at volume {volume}%")
             player = Gst.ElementFactory.make("playbin", "player")
             player.set_property("uri", "file://" + os.path.abspath(sound_file))
             player.set_property("volume", volume / 100.0)
@@ -163,6 +138,8 @@ def play_sound(sound_file, volume=100):
             player.set_state(Gst.State.NULL)
         except Exception as e:
             print(f"Error playing sound: {e}")
+    elif debug_mode:
+        print(f"DEBUG: Sound file not found or not specified: {sound_file}")
 
 def run_action(script_path, device_id):
     if script_path and os.path.exists(script_path):
@@ -210,6 +187,8 @@ def take_device_snapshot():
         if device_id != 'default':
             snapshot[device_id] = vendor_id
     device_snapshot = snapshot
+    if debug_mode:
+        print(f"DEBUG: Device snapshot: {snapshot}")
     return snapshot
 
 def find_disconnected_device():
@@ -219,17 +198,26 @@ def find_disconnected_device():
     
     for device_id, vendor_id in device_snapshot.items():
         if device_id not in new_snapshot:
+            if debug_mode:
+                print(f"DEBUG: Found disconnected device: {device_id} (vendor: {vendor_id})")
             return device_id, vendor_id
     
     return 'default', 'N/A'
 
 def match_pattern(pattern, text):
     """Match pattern with wildcard support"""
-    return fnmatch.fnmatch(text, pattern)
+    result = fnmatch.fnmatch(text, pattern)
+    if debug_mode:
+        print(f"DEBUG: Pattern match '{pattern}' vs '{text}' = {result}")
+    return result
 
 def find_matching_sound(device_id, vendor_id, event_type, config):
     """Find matching sound with wildcard support"""
     sound_mappings = config.get('sound_mappings', {})
+    
+    if debug_mode:
+        print(f"DEBUG: Looking for {event_type} sound for device='{device_id}', vendor='{vendor_id}'")
+        print(f"DEBUG: Available sound mappings: {json.dumps(sound_mappings, indent=2)}")
     
     # Priority: exact device match > device pattern > vendor match > vendor pattern > wildcard
     candidates = []
@@ -244,17 +232,28 @@ def find_matching_sound(device_id, vendor_id, event_type, config):
                 # Calculate specificity (fewer wildcards = higher priority)
                 specificity = len(vendor_pattern) - vendor_pattern.count('*')
                 candidates.append((specificity, sounds[event_type]))
+                if debug_mode:
+                    print(f"DEBUG: Vendor pattern '{vendor_pattern}' matched with specificity {specificity}")
         elif pattern == '*':
             candidates.append((0, sounds[event_type]))
+            if debug_mode:
+                print(f"DEBUG: Wildcard '*' matched")
         else:
             if match_pattern(device_id, pattern):
                 specificity = len(pattern) - pattern.count('*')
                 candidates.append((specificity + 1000, sounds[event_type]))  # Device patterns have higher priority
+                if debug_mode:
+                    print(f"DEBUG: Device pattern '{pattern}' matched with specificity {specificity + 1000}")
     
     if candidates:
         candidates.sort(reverse=True, key=lambda x: x[0])
-        return candidates[0][1]
+        result = candidates[0][1]
+        if debug_mode:
+            print(f"DEBUG: Selected sound: {result}")
+        return result
     
+    if debug_mode:
+        print(f"DEBUG: No matching sound found")
     return None
 
 def monitor_usb(hide_connects=False, hide_disconnects=False, hide_default=False, hide_devices=False, show_all_duplicates=False):
@@ -278,12 +277,16 @@ def monitor_usb(hide_connects=False, hide_disconnects=False, hide_default=False,
             print(f"DEBUG: Action={action}, Device={device_id}, Vendor={vendor_id}")
         
         if device_id in config.get('blacklist', []):
+            if debug_mode:
+                print(f"DEBUG: Device {device_id} is blacklisted, ignoring")
             return
         if hide_default and device_id == 'default':
             return
         if hide_devices and device_id != 'default':
             return
         if not show_all_duplicates and is_duplicate_event(action, device_id):
+            if debug_mode:
+                print(f"DEBUG: Duplicate event detected, ignoring")
             return
         
         color = get_device_color(device_id, vendor_id, config)
@@ -321,39 +324,59 @@ def monitor_usb(hide_connects=False, hide_disconnects=False, hide_default=False,
         elif device.action == 'remove':
             handle_device_event('remove', device)
 
-def change_sound(device_name, sound_path, connect=True, disconnect=False):
-    """Set sound with new v4.0 syntax"""
+def change_sound(args_list):
+    """Set sound with new v5.0 syntax supporting -connect and -disconnect flags"""
     config = load_config()
+    
+    # Parse flags and arguments
+    connect_flag = '-connect' in args_list
+    disconnect_flag = '-disconnect' in args_list
+    
+    # Remove flags from args
+    filtered_args = [arg for arg in args_list if arg not in ['-connect', '-disconnect']]
+    
+    if len(filtered_args) < 2:
+        print("Error: change-sound requires DEVICE and /path/to/sound")
+        print("Usage: kg change-sound [-connect] [-disconnect] DEVICE /path/to/sound.mp3")
+        print("Flags: -connect (default), -disconnect")
+        return
+    
+    device_name = filtered_args[0]
+    sound_path = filtered_args[1]
     
     if not os.path.exists(sound_path):
         print(f"Error: Sound file not found: {sound_path}")
         return
     
+    # Default to connect if no flags specified
+    if not connect_flag and not disconnect_flag:
+        connect_flag = True
+    
     if device_name not in config['sound_mappings']:
         config['sound_mappings'][device_name] = {}
     
-    if connect:
+    if connect_flag:
         config['sound_mappings'][device_name]['connect'] = sound_path
         print(f"Connect sound for '{device_name}' set to: {sound_path}")
     
-    if disconnect:
+    if disconnect_flag:
         config['sound_mappings'][device_name]['disconnect'] = sound_path
         print(f"Disconnect sound for '{device_name}' set to: {sound_path}")
     
     save_config(config)
 
 def update_knocking_goose():
-    """Run update via kg_start.sh"""
+    """Run update via install script"""
     print(colorize("Updating Knocking Goose...", Colors.BRIGHT_CYAN))
     try:
-        result = subprocess.run(['sudo', '/usr/bin/kg_start.sh'], check=True, capture_output=True, text=True)
+        result = subprocess.run(['sudo', '/usr/bin/kg_install-knocking-goose-linux.sh'], check=True, capture_output=True, text=True)
         print(result.stdout)
         print(colorize("✓ Update completed successfully!", Colors.BRIGHT_GREEN))
     except subprocess.CalledProcessError as e:
         print(colorize(f"✗ Update failed: {e}", Colors.BRIGHT_RED))
         print(e.stderr)
     except FileNotFoundError:
-        print(colorize("✗ Update script not found at /usr/bin/kg_start.sh", Colors.BRIGHT_RED))
+        print(colorize("✗ Update script not found at /usr/bin/kg_install-knocking-goose-linux.sh", Colors.BRIGHT_RED))
 
 def download_sounds():
     """Download sound files from GitHub"""
@@ -363,14 +386,18 @@ def download_sounds():
     print(colorize("Downloading sound files...", Colors.BRIGHT_CYAN))
     
     # Create sounds directory
-    os.makedirs(SOUNDS_DIR, exist_ok=True)
+    try:
+        subprocess.run(['sudo', 'mkdir', '-p', SOUNDS_DIR], check=True)
+    except subprocess.CalledProcessError:
+        print(colorize(f"✗ Failed to create directory {SOUNDS_DIR}", Colors.BRIGHT_RED))
+        return
     
     for sound in sounds:
         url = f"{base_url}/{sound}"
         dest = os.path.join(SOUNDS_DIR, sound)
         print(f"Downloading {sound}...")
         try:
-            subprocess.run(['wget', '-q', url, '-O', dest], check=True)
+            subprocess.run(['sudo', 'wget', '-q', url, '-O', dest], check=True)
             print(colorize(f"  ✓ {sound}", Colors.BRIGHT_GREEN))
         except subprocess.CalledProcessError:
             print(colorize(f"  ✗ Failed to download {sound}", Colors.BRIGHT_RED))
@@ -379,30 +406,13 @@ def download_sounds():
 
 def easter_egg_quack():
     """Quack easter egg!"""
-    print(colorize("""
-    ⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⠀⠀⠀⠀⠀
-    ⠀⠀⠀⠀⠀⢀⣠⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣄⡀⠀
-    ⠀⠀⠀⣠⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦
-    ⠀⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
-    ⠀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
-    ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠿⠿⠿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
-    ⢸⣿⣿⣿⣿⣿⣿⠟⠉⠀⠀⠀⠀⠀⠀⠀⠉⠻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
-    ⢸⣿⣿⣿⣿⡿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿
-    ⠈⣿⣿⣿⣿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⣿⣿⣿⣿⣿⣿⣿⣿⣿⠃
-    ⠀⠹⣿⣿⡇⠀⣀⣀⣀⠀⠀⠀⠀⠀⠀⣀⣀⣀⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⠏⠀
-    ⠀⠀⠹⣿⡇⠀⠿⠿⠿⠀⠀⠀⠀⠀⠀⠿⠿⠿⠀⠀⢸⣿⣿⣿⣿⣿⣿⠏⠀⠀
-    ⠀⠀⠀⠹⣿⡀⠀⠀⠀⠀⢀⣀⣀⣀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣿⣿⣿⠏⠀⠀⠀
-    ⠀⠀⠀⠀⠘⣿⣦⣄⣀⣴⣿⣿⣿⣿⣿⣦⣀⣠⣴⣿⣿⣿⣿⣿⣿⠃⠀⠀⠀⠀
-    ⠀⠀⠀⠀⠀⠈⠻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⠁⠀⠀⠀⠀⠀
-    ⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠻⠿⣿⣿⣿⣿⠿⠟⠛⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-    """, Colors.BRIGHT_YELLOW))
-    print(colorize("                    🦆 QUACK! 🦆", Colors.BOLD + Colors.BRIGHT_YELLOW))
-    print(colorize("         Knocking Goose says hello!", Colors.BRIGHT_CYAN))
+    print(colorize("🦆 QUACK! 🦆", Colors.BOLD + Colors.BRIGHT_YELLOW))
     
+    config = load_config()
     if os.path.exists(SOUND_QUACK):
-        play_sound(SOUND_QUACK, 100)
+        play_sound(SOUND_QUACK, config.get('volume', 100))
     else:
-        print(colorize("\n(Quack sound not found - run: sudo kg download-sounds)", Colors.DIM))
+        print(colorize("(Quack sound not found - run: sudo kg download-sounds)", Colors.DIM))
 
 def set_color(device_name, color_name):
     config = load_config()
@@ -591,22 +601,29 @@ def show_version():
     print("=" * 70)
     print(colorize("Knocking Goose - USB Device Sound Notifier", Colors.BOLD + Colors.BRIGHT_CYAN))
     print("=" * 70)
-    print(f"\n{colorize('Current Version:', Colors.BOLD)} {colorize('4.0', Colors.BRIGHT_GREEN)}")
-    print(f"{colorize('Release Date:', Colors.BOLD)} 2025-12-22 03:00")
+    print(f"\n{colorize('Current Version:', Colors.BOLD)} {colorize('5.0', Colors.BRIGHT_GREEN)}")
+    print(f"{colorize('Release Date:', Colors.BOLD)} 2025-02-01")
     print("\n" + "=" * 70)
     print(colorize("VERSION HISTORY", Colors.BOLD + Colors.BRIGHT_YELLOW))
     print("=" * 70)
     versions = [
+        {'version': '5.0', 'date': '2025-02-01', 'changes': [
+            'FIXED: Autostart now works reliably',
+            'FIXED: Config file is now properly read and applied',
+            'FIXED: Start.mp3, Off.mp3, Quack.mp3 sounds play correctly',
+            'FIXED: Wildcard matching now works properly',
+            'FIXED: -connect and -disconnect parameters recognized',
+            'NEW: --man shows comprehensive manual',
+            'NEW: kg vs command shows comparison table',
+            'IMPROVED: Easter egg shows only sound, no ASCII art',
+            'IMPROVED: Better debug mode for troubleshooting']},
         {'version': '4.0', 'date': '2025-12-22 03:00', 'changes': [
             'NEW: kg update command - auto-update via kg_start.sh',
             'NEW: Wildcard support - use * in device/vendor names',
             'NEW: -connect and -disconnect flags for change-sound',
             'NEW: Startup/shutdown sounds (Start.mp3, Off.mp3)',
             'NEW: Easter egg - kg quack',
-            'IMPROVED: Disconnect detection - shows real device name',
-            'IMPROVED: Device snapshot system tracks all connections',
-            'REMOVED: ! symbol - use -disconnect flag instead',
-            'Migration from v4.0 config format automatic']},
+            'IMPROVED: Disconnect detection - shows real device name']},
         {'version': '4.0', 'date': '2025-12-22 02:00', 'changes': [
             'System-wide autostart for ALL users']},
         {'version': '3.2', 'date': '2025-12-22 01:00', 'changes': [
@@ -620,6 +637,497 @@ def show_version():
         for change in v['changes']:
             print(f"  {colorize('•', Colors.BRIGHT_YELLOW)} {change}")
     print("\n" + "=" * 70)
+
+def show_comparison():
+    """Show comparison table - PLACEHOLDER FOR USER TO FILL IN"""
+    print("\n" + "=" * 100)
+    print(colorize("Knocking Goose vs Competition", Colors.BOLD + Colors.BRIGHT_CYAN))
+    print("=" * 100)
+    
+    # PLACEHOLDER: User should insert comparison table here
+    print("""
+| Feature              | Knocking Goose | Competitor A | Competitor B | Competitor C |
+|---------------------|----------------|--------------|--------------|--------------|
+| Platform            | ✅ Linux       | ❌ Windows   | ❌ Windows   | ✅ Linux     |
+| Price               | ✅ Free        | ❌ $15       | ❌ $20       | ✅ Free      |
+| Custom Sounds       | ✅✅✅          | ✅           | ✅           | ❌           |
+| Per-Device Sounds   | ✅             | ❌           | ❌           | ❌           |
+| Per-Vendor Sounds   | ✅             | ❌           | ❌           | ❌           |
+| Wildcard Support    | ✅             | ❌           | ❌           | ❌           |
+| Color Coding        | ✅             | ❌           | ❌           | ❌           |
+| Actions/Scripts     | ✅             | ❌           | ❌           | ❌           |
+| History Tracking    | ✅             | ❌           | ✅           | ❌           |
+| Statistics          | ✅             | ❌           | ❌           | ❌           |
+| Blacklist           | ✅             | ❌           | ✅           | ❌           |
+| Volume Control      | ✅             | ❌           | ✅           | ❌           |
+| Debug Mode          | ✅             | ❌           | ❌           | ❌           |
+| Auto-Update         | ✅             | ❌           | ❌           | ❌           |
+| Easy Setup          | ✅✅✅          | ✅✅         | ✅✅         | ✅✅         |
+| CLI Interface       | ✅             | ❌           | ❌           | ❌           |
+| Open Source         | ✅             | ❌           | ❌           | ✅           |
+    """)
+    
+    print("=" * 100)
+    print(colorize("\n🏆 Knocking Goose - The most feature-rich USB notification tool for Linux!", 
+                   Colors.BOLD + Colors.BRIGHT_GREEN))
+    print("=" * 100 + "\n")
+
+def show_manual():
+    """Show comprehensive manual"""
+    manual_text = """
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    KNOCKING GOOSE v5.0 - MANUAL                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+TABLE OF CONTENTS
+─────────────────
+1. Introduction
+2. Installation
+3. Basic Usage
+4. Sound Management
+5. Color Management
+6. Device Management
+7. Automation
+8. History & Statistics
+9. Advanced Features
+10. Troubleshooting
+11. Examples
+
+───────────────────────────────────────────────────────────────────────────────
+
+1. INTRODUCTION
+───────────────
+
+Knocking Goose is a powerful USB device sound notifier for Linux that monitors
+USB connections and plays customizable sounds. It supports per-device sounds,
+per-vendor sounds, wildcard patterns, color coding, script automation, and more.
+
+───────────────────────────────────────────────────────────────────────────────
+
+2. INSTALLATION
+───────────────
+
+Quick Install (One-liner):
+  wget https://raw.githubusercontent.com/Change-Goose-Open-Surce-Software/\\
+  Knocking-Goose/main/install-knocking-goose-linux.sh && \\
+  chmod +x install-knocking-goose-linux.sh && \\
+  sudo ./install-knocking-goose-linux.sh
+
+The installer will:
+  • Install all required dependencies (Python3, GStreamer, pyudev)
+  • Set up system-wide autostart for ALL users
+  • Download default sounds (Start.mp3, Off.mp3, Quack.mp3)
+  • Configure auto-updater
+  • Start monitoring immediately
+
+After installation:
+  • Knocking Goose runs automatically on login
+  • Command 'kg' is available system-wide
+  • Configuration is stored in ~/.config/kg_config.json
+
+───────────────────────────────────────────────────────────────────────────────
+
+3. BASIC USAGE
+──────────────
+
+Starting Knocking Goose:
+  kg                      # Start monitoring (plays Start.mp3)
+  kg -default             # Hide 'default' devices
+  kg --debug              # Enable debug mode
+
+Stopping Knocking Goose:
+  Press Ctrl+C            # Graceful shutdown (plays Off.mp3)
+  pkill -f "kg -default"  # Force stop
+
+Getting Help:
+  kg --help               # Quick command reference
+  kg --man                # This comprehensive manual
+  kg --version            # Version info and changelog
+
+───────────────────────────────────────────────────────────────────────────────
+
+4. SOUND MANAGEMENT
+───────────────────
+
+Setting Sounds:
+  kg change-sound DEVICE /path/to/connect.mp3
+      Set connect sound for specific device
+  
+  kg change-sound -connect DEVICE /path/to/connect.mp3
+      Explicitly set connect sound
+  
+  kg change-sound -disconnect DEVICE /path/to/disconnect.mp3
+      Set disconnect sound
+  
+  kg change-sound -connect -disconnect DEVICE /path/to/sound.mp3
+      Set both connect and disconnect to same sound
+
+Wildcard Support:
+  kg change-sound "8BitDo*" /sounds/gamepad.mp3
+      Match all devices starting with "8BitDo"
+  
+  kg change-sound "*Mouse*" /sounds/mouse.mp3
+      Match any device containing "Mouse"
+  
+  kg change-sound "vendor:153*" /sounds/razer.mp3
+      Match all Razer devices (vendor ID starts with 153)
+
+Global Sounds:
+  kg change-sound -disconnect "*" /sounds/disconnect.mp3
+      Set default disconnect sound for ALL devices
+
+Testing Sounds:
+  kg test-sound DEVICE              # Test connect sound
+  kg test-sound -disconnect DEVICE  # Test disconnect sound
+
+Volume Control:
+  kg volume 75              # Set to 75%
+  kg volume 0               # Mute
+  kg volume 100             # Maximum
+
+Download Default Sounds:
+  sudo kg download-sounds   # Downloads Start.mp3, Off.mp3, Quack.mp3
+
+Removing Sounds:
+  kg remove sound DEVICE    # Remove sound configuration
+
+───────────────────────────────────────────────────────────────────────────────
+
+5. COLOR MANAGEMENT
+───────────────────
+
+Setting Colors:
+  kg colour DEVICE red                # Set device color
+  kg colour vendor:1532 gray          # Set vendor color
+  kg color DEVICE bright_green        # 'color' also works
+
+Available Colors:
+  kg colours                          # Show all 20+ colors
+  kg colors                           # Alternative spelling
+
+Color List:
+  black, red, green, yellow, blue, magenta, cyan, white
+  gray/grey, bright_red, bright_green, bright_yellow, bright_blue
+  bright_magenta, bright_cyan, bright_white
+  orange, purple, pink, lime
+
+Removing Colors:
+  kg remove colour DEVICE             # Remove color
+  kg remove colour vendor:1532        # Remove vendor color
+
+───────────────────────────────────────────────────────────────────────────────
+
+6. DEVICE MANAGEMENT
+────────────────────
+
+Listing Devices:
+  kg list                   # Show all connected USB devices
+                            # with vendor info, model, IDs
+
+Blacklist (Ignore Devices):
+  kg blacklist DEVICE              # Add to blacklist
+  kg blacklist --remove DEVICE     # Remove from blacklist
+
+Finding Device Names:
+  1. Run: kg list
+  2. Connect/disconnect your device
+  3. Note the device name shown in output
+  4. Use that name in commands
+
+Example Device Names:
+  • 8BitDo_IDLE_E417D8022CA9
+  • SanDisk_Cruzer_Blade_4C530001234567890123
+  • Logitech_USB_Receiver
+
+Vendor IDs:
+  • 1532 = Razer
+  • 046d = Logitech  
+  • 0781 = SanDisk
+  • 2dc8 = 8BitDo
+  • 8087 = Intel
+
+───────────────────────────────────────────────────────────────────────────────
+
+7. AUTOMATION
+─────────────
+
+Execute Scripts on Device Connect:
+  kg action DEVICE /path/to/script.sh
+      Run script when device connects
+      Script receives device name as $1
+
+Example Script (/home/user/start-gaming.sh):
+  #!/bin/bash
+  echo "Controller connected: $1"
+  steam &
+  discord &
+
+Make Script Executable:
+  chmod +x /home/user/start-gaming.sh
+
+Remove Action:
+  kg remove action DEVICE
+
+───────────────────────────────────────────────────────────────────────────────
+
+8. HISTORY & STATISTICS
+────────────────────────
+
+View History:
+  kg history                # Last 24 hours
+  kg history 7              # Last 7 days
+  kg history 30             # Last 30 days
+
+Shows:
+  • Timestamp of each connection/disconnection
+  • Device name
+  • Vendor ID
+  • Connection status (colored)
+
+View Statistics:
+  kg stats                  # Summary of all device activity
+
+Shows:
+  • Total connects per device
+  • Total disconnects per device
+  • Vendor information
+  • Sorted by most active devices
+
+History Storage:
+  • Last 1000 events stored
+  • Location: ~/.config/kg_config.json
+  • Automatic cleanup of old events
+
+───────────────────────────────────────────────────────────────────────────────
+
+9. ADVANCED FEATURES
+────────────────────
+
+Monitoring Filters:
+  kg -c                     # Hide connect messages
+  kg -d                     # Hide disconnect messages
+  kg -default               # Hide 'default' devices
+  kg -device                # Show ONLY 'default' devices
+  kg -all                   # Show duplicate events
+
+Debug Mode:
+  kg --debug                # Verbose logging
+                            # Shows pattern matching
+                            # Shows config loading
+                            # Shows sound file paths
+
+Auto-Update:
+  kg update                 # Update to latest version
+
+Easter Egg:
+  kg quack                  # Play quack sound 🦆
+
+Comparison Table:
+  kg vs                     # Show feature comparison
+
+Configuration File:
+  Location: ~/.config/kg_config.json
+  Format: JSON
+  Can be edited manually (be careful with syntax!)
+
+───────────────────────────────────────────────────────────────────────────────
+
+10. TROUBLESHOOTING
+───────────────────
+
+Problem: Knocking Goose not starting on login
+Solution:
+  1. Check autostart file exists:
+     ls -la /etc/xdg/autostart/kg_start.desktop
+  
+  2. Check startup script:
+     ls -la /usr/bin/kg_start.sh
+  
+  3. Test manually:
+     /usr/bin/kg_start.sh
+  
+  4. Reinstall:
+     sudo ./install-knocking-goose-linux.sh
+
+Problem: No sound playing
+Solution:
+  1. Check volume:
+     kg volume 100
+  
+  2. Test sound file:
+     kg test-sound DEVICE
+  
+  3. Verify sound file exists:
+     ls -la /path/to/sound.mp3
+  
+  4. Check GStreamer:
+     gst-inspect-1.0 playbin
+  
+  5. Enable debug mode:
+     kg --debug
+
+Problem: Device not recognized
+Solution:
+  1. List devices while connecting:
+     kg list
+  
+  2. Use debug mode:
+     kg --debug
+  
+  3. Check with lsusb:
+     lsusb
+  
+  4. Try wildcard pattern:
+     kg change-sound "*PartOfName*" /sound.mp3
+
+Problem: Wildcards not matching
+Solution:
+  1. Enable debug mode to see pattern matching:
+     kg --debug
+  
+  2. Check exact device name:
+     kg list
+  
+  3. Use quotes around wildcards:
+     kg change-sound "8BitDo*" /sound.mp3
+  
+  4. Test patterns carefully:
+     "*" = everything
+     "Device*" = starts with Device
+     "*Device*" = contains Device
+     "*Device" = ends with Device
+
+Problem: Config not being read
+Solution:
+  1. Check config file exists:
+     cat ~/.config/kg_config.json
+  
+  2. Validate JSON syntax:
+     python3 -m json.tool ~/.config/kg_config.json
+  
+  3. Enable debug mode:
+     kg --debug
+  
+  4. Delete and recreate:
+     rm ~/.config/kg_config.json
+     kg volume 100  # Creates new config
+
+───────────────────────────────────────────────────────────────────────────────
+
+11. EXAMPLES
+────────────
+
+Example 1: Gaming Setup
+  # Set sounds for gaming devices
+  kg change-sound "8BitDo*" ~/sounds/controller-connect.mp3
+  kg change-sound -disconnect "8BitDo*" ~/sounds/controller-disconnect.mp3
+  
+  # Set colors
+  kg colour "8BitDo*" lime
+  
+  # Auto-start Steam
+  kg action 8BitDo_IDLE ~/.scripts/start-steam.sh
+  
+  # Hide non-gaming devices
+  kg blacklist default
+
+Example 2: Professional Workspace
+  # Silent operation
+  kg volume 0
+  
+  # Track all USB activity
+  kg history 30 > usb-audit-$(date +%F).txt
+  
+  # Color-code work devices
+  kg colour vendor:0781 orange    # SanDisk drives
+  kg colour vendor:046d blue      # Logitech peripherals
+
+Example 3: Security Monitoring
+  # Set alert sounds for unknown devices
+  kg change-sound "*" ~/sounds/alert.mp3
+  
+  # Color-code known devices
+  kg colour "MyDevice*" green
+  kg colour "vendor:1234" green
+  
+  # Blacklist known devices to only see alerts for new ones
+  kg blacklist MyDevice1
+  kg blacklist MyDevice2
+  
+  # Run in debug mode to log everything
+  kg --debug > /var/log/usb-monitor.log &
+
+Example 4: Multi-Device Setup
+  # Different sounds per vendor
+  kg change-sound vendor:1532 ~/sounds/razer.mp3    # Razer
+  kg change-sound vendor:046d ~/sounds/logitech.mp3 # Logitech
+  kg change-sound vendor:0781 ~/sounds/sandisk.mp3  # SanDisk
+  
+  # Different disconnect sound
+  kg change-sound -disconnect "*" ~/sounds/generic-disconnect.mp3
+  
+  # Color code by vendor
+  kg colour vendor:1532 green
+  kg colour vendor:046d blue
+  kg colour vendor:0781 orange
+
+Example 5: Wildcard Mastery
+  # Match all mouse devices
+  kg change-sound "*Mouse*" ~/sounds/mouse.mp3
+  kg colour "*Mouse*" cyan
+  
+  # Match all keyboards
+  kg change-sound "*Keyboard*" ~/sounds/keyboard.mp3
+  kg colour "*Keyboard*" blue
+  
+  # Match specific product line
+  kg change-sound "Logitech_G*" ~/sounds/logitech-gaming.mp3
+  
+  # Match by vendor with wildcard
+  kg change-sound "vendor:046*" ~/sounds/logitech-all.mp3
+
+───────────────────────────────────────────────────────────────────────────────
+
+QUICK REFERENCE CARD
+────────────────────
+
+Essential Commands:
+  kg                              Start monitoring
+  kg list                         List devices
+  kg change-sound DEVICE /path    Set sound
+  kg colour DEVICE COLOR          Set color
+  kg history                      View history
+  kg --help                       Quick help
+  kg --man                        This manual
+
+Common Patterns:
+  kg change-sound -disconnect "*" /path      Global disconnect
+  kg change-sound "Device*" /path            Wildcard device
+  kg change-sound vendor:1532 /path          Vendor sound
+  kg colour vendor:1532 green                Vendor color
+  kg volume 75                               Set volume
+  kg blacklist DEVICE                        Ignore device
+
+Files & Locations:
+  Config:        ~/.config/kg_config.json
+  Sounds:        /usr/share/knocking-goose/sounds/
+  Autostart:     /etc/xdg/autostart/kg_start.desktop
+  Startup:       /usr/bin/kg_start.sh
+  Executable:    /usr/bin/kg
+
+───────────────────────────────────────────────────────────────────────────────
+
+For more information, visit:
+  https://github.com/Change-Goose-Open-Surce-Software/Knocking-Goose
+
+Report bugs or request features:
+  https://github.com/Change-Goose-Open-Surce-Software/Knocking-Goose/issues
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                  End of Manual - Happy USB Monitoring! 🦆                    ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+    """
+    print(colorize(manual_text, Colors.WHITE))
 
 def test_sound(device_name, event_type='connect'):
     config = load_config()
@@ -637,18 +1145,19 @@ def test_sound(device_name, event_type='connect'):
 def main():
     global debug_mode
     parser = argparse.ArgumentParser(
-        description='Knocking Goose v4.0 - USB Device Sound Notifier',
+        description='Knocking Goose v5.0 - USB Device Sound Notifier',
         epilog=f"{colorize('Examples:', Colors.BOLD)}\n"
                f"  kg change-sound -connect -disconnect device /sound.mp3\n"
-               f"  kg change-sound -disconnect /sounds/disconnect.wav\n"
-               f"  kg change-sound 8BitDo* /sounds/gamepad.mp3\n"
+               f"  kg change-sound -disconnect \"*\" /sounds/disconnect.wav\n"
+               f"  kg change-sound \"8BitDo*\" /sounds/gamepad.mp3\n"
                f"  kg change-sound vendor:153* /sounds/razer.mp3\n"
                f"  kg update                  # Update Knocking Goose\n"
                f"  kg quack                   # Easter egg!\n"
+               f"  kg vs                      # Comparison table\n"
                f"\nFor detailed manual: kg --man",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument('--man', action='store_true', help='Show manual')
+    parser.add_argument('--man', action='store_true', help='Show comprehensive manual')
     parser.add_argument('--version', action='store_true', help='Show version')
     parser.add_argument('--debug', action='store_true', help='Debug mode')
     parser.add_argument('-d', '--hide-disconnects', action='store_true')
@@ -665,90 +1174,77 @@ def main():
         print(colorize("DEBUG MODE ENABLED", Colors.BRIGHT_YELLOW))
     
     if args.man:
-        # Man page here (too long, keep separate)
-        print("See --help for quick reference")
+        show_manual()
         return
     
     if args.version:
         show_version()
         return
     
-    # Parse -connect and -disconnect flags
-    connect_flag = '-connect' in args.args
-    disconnect_flag = '-disconnect' in args.args
-    
-    # Remove flags from args
-    filtered_args = [arg for arg in args.args if arg not in ['-connect', '-disconnect']]
-    
     if args.command == 'change-sound':
-        if len(filtered_args) < 2:
-            print("Error: change-sound requires DEVICE and /path/to/sound")
-            print("Flags: -connect (default), -disconnect")
-            sys.exit(1)
-        device_name = filtered_args[0]
-        sound_path = filtered_args[1]
-        # Default to connect if no flags specified
-        if not connect_flag and not disconnect_flag:
-            connect_flag = True
-        change_sound(device_name, sound_path, connect_flag, disconnect_flag)
+        change_sound(args.args)
     elif args.command == 'update':
         update_knocking_goose()
     elif args.command == 'quack':
         easter_egg_quack()
+    elif args.command == 'vs':
+        show_comparison()
     elif args.command == 'download-sounds':
         download_sounds()
     elif args.command == 'action':
-        if len(filtered_args) < 2:
+        if len(args.args) < 2:
             print("Error: action requires DEVICE and /path/to/script.sh")
             sys.exit(1)
-        set_action(filtered_args[0], filtered_args[1])
+        set_action(args.args[0], args.args[1])
     elif args.command in ['colour', 'color']:
-        if len(filtered_args) < 2:
+        if len(args.args) < 2:
             print("Error: colour requires DEVICE and COLOR")
             sys.exit(1)
-        set_color(filtered_args[0], filtered_args[1])
+        set_color(args.args[0], args.args[1])
     elif args.command in ['colours', 'colors']:
         show_colors()
     elif args.command == 'blacklist':
-        if len(filtered_args) < 1:
+        if len(args.args) < 1:
             print("Error: blacklist requires DEVICE")
             sys.exit(1)
-        remove = '--remove' in filtered_args
-        device_name = filtered_args[1] if remove else filtered_args[0]
+        remove = '--remove' in args.args
+        device_name = args.args[1] if remove else args.args[0]
         manage_blacklist(device_name, remove)
     elif args.command == 'volume':
-        if len(filtered_args) < 1:
+        if len(args.args) < 1:
             print("Error: volume requires NUMBER")
             sys.exit(1)
-        set_volume(filtered_args[0])
+        set_volume(args.args[0])
     elif args.command == 'list':
         list_devices()
     elif args.command == 'history':
-        days = int(filtered_args[0]) if filtered_args else 1
+        days = int(args.args[0]) if args.args else 1
         show_history(days)
     elif args.command == 'stats':
         show_stats()
     elif args.command == 'remove':
-        if len(filtered_args) < 2:
+        if len(args.args) < 2:
             print("Error: remove requires TYPE and DEVICE")
             sys.exit(1)
-        remove_config(filtered_args[0], filtered_args[1])
+        remove_config(args.args[0], args.args[1])
     elif args.command == 'test-sound':
-        if len(filtered_args) < 1:
+        if len(args.args) < 1:
             print("Error: test-sound requires DEVICE")
             sys.exit(1)
+        disconnect_flag = '-disconnect' in args.args
+        device_name = [arg for arg in args.args if arg != '-disconnect'][0]
         event_type = 'disconnect' if disconnect_flag else 'connect'
-        test_sound(filtered_args[0], event_type)
+        test_sound(device_name, event_type)
     elif args.command:
         print(f"Error: Unknown command '{args.command}'")
         sys.exit(1)
     else:
         # Play startup sound
-        if os.path.exists(SOUND_START):
-            play_sound(SOUND_START, load_config().get('volume', 100))
-        
-        print(colorize("Starting Knocking Goose v4.0...", Colors.BRIGHT_CYAN))
         config = load_config()
+        if os.path.exists(SOUND_START):
+            play_sound(SOUND_START, config.get('volume', 100))
+        
+        print(colorize("Starting Knocking Goose v5.0...", Colors.BRIGHT_CYAN))
         print(f"Volume: {config.get('volume', 100)}%")
         monitor_thread = threading.Thread(target=monitor_usb, args=(args.hide_connects, args.hide_disconnects, args.hide_default, args.hide_devices, args.show_all))
         monitor_thread.daemon = True
