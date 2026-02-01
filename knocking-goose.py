@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+F#!/usr/bin/env python3
 # knocking-goose.py v5.0
 import json
 import os
@@ -1250,6 +1250,7 @@ def main():
         monitor_thread.start()
         print(colorize("Knocking Goose is running!", Colors.BRIGHT_GREEN))
         print("Press Ctrl+C to stop.")
+        print("If you do not hear the Startsound,work this programm actually not!",Colors.RED)
         try:
             while True:
                 time.sleep(1)
