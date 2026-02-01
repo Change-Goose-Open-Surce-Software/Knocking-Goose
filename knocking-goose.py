@@ -1,4 +1,4 @@
-F#!/usr/bin/env python3
+#!/usr/bin/env python3
 # knocking-goose.py v5.0
 import json
 import os
