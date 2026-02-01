@@ -1,10 +1,5 @@
 #!/bin/bash
 
-if [[ $EUID -ne 0 ]]; then
-    echo "Run with sudo"
-    exit 1
-fi
-
 apt update
 apt install -y -qq python3 python3-gi python3-pyudev gir1.2-gstreamer-1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly wget
 
@@ -30,6 +25,4 @@ X-GNOME-Autostart-enabled=true
 Categories=Utility;
 EOF
 
-[ -n "$SUDO_USER" ] && su - "$SUDO_USER" -c "kg -default &" || kg -default &
-
-echo "Done. Run: kg --man"
+kg
