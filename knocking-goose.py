@@ -646,25 +646,24 @@ def show_comparison():
     
     # PLACEHOLDER: User should insert comparison table here
     print("""
-| Feature              | Knocking Goose | Competitor A | Competitor B | Competitor C |
-|---------------------|----------------|--------------|--------------|--------------|
-| Platform            | ✅ Linux       | ❌ Windows   | ❌ Windows   | ✅ Linux     |
-| Price               | ✅ Free        | ❌ $15       | ❌ $20       | ✅ Free      |
-| Custom Sounds       | ✅✅✅          | ✅           | ✅           | ❌           |
-| Per-Device Sounds   | ✅             | ❌           | ❌           | ❌           |
-| Per-Vendor Sounds   | ✅             | ❌           | ❌           | ❌           |
-| Wildcard Support    | ✅             | ❌           | ❌           | ❌           |
-| Color Coding        | ✅             | ❌           | ❌           | ❌           |
-| Actions/Scripts     | ✅             | ❌           | ❌           | ❌           |
-| History Tracking    | ✅             | ❌           | ✅           | ❌           |
-| Statistics          | ✅             | ❌           | ❌           | ❌           |
-| Blacklist           | ✅             | ❌           | ✅           | ❌           |
-| Volume Control      | ✅             | ❌           | ✅           | ❌           |
-| Debug Mode          | ✅             | ❌           | ❌           | ❌           |
-| Auto-Update         | ✅             | ❌           | ❌           | ❌           |
-| Easy Setup          | ✅✅✅          | ✅✅         | ✅✅         | ✅✅         |
-| CLI Interface       | ✅             | ❌           | ❌           | ❌           |
-| Open Source         | ✅             | ❌           | ❌           | ✅           |
+| Feature               | Knocking Goose | USBAlert   | USB Safely Remove | udev Rules      | usb-device-notifier |
+|----------------------|----------------|------------|--------------------|------------------|---------------------|
+| **Platform**         | ✅ Linux        | ❌ Windows  | ❌ Windows          | ✅ Linux          | ✅ Linux             |
+| **Price**            | ✅ Free         | ❌ $15      | ❌ $20              | ✅ Free           | ✅ Free              |
+| **Custom Sounds**    | ✅✅✅           | ✅         | ✅                  | ❌                | ❌                   |
+| **Per-Device Sounds** | ✅             | ❌         | ❌                  | ✅ Complex        | ❌                   |
+| **Per-Vendor Sounds** | ✅             | ❌         | ❌                  | ✅ Complex        | ❌                   |
+| **Color Coding**     | ✅              | ❌         | ❌                  | ❌                | ❌                   |
+| **Actions/Scripts**  | ✅              | ❌         | ❌                  | ✅ Complex        | ❌                   |
+| **History Tracking**  | ✅              | ❌         | ✅                  | ❌                | ❌                   |
+| **Statistics**       | ✅              | ❌         | ❌                  | ❌                | ❌                   |
+| **Blacklist**        | ✅              | ❌         | ✅                  | ✅ Complex        | ❌                   |
+| **Volume Control**   | ✅              | ❌         | ✅                  | ❌                | ❌                   |
+| **Debug Mode**       | ✅              | ❌         | ❌                  | ❌                | ❌                   |
+| **Easy Setup**       | ✅✅✅           | ✅✅       | ✅✅                | ❌                | ✅✅                 |
+| **CLI Interface**    | ✅              | ❌         | ❌                  | ❌                | ❌                   |
+| **Open Source**      | ✅              | ❌         | ❌                  | ✅                | ✅                   |
+
     """)
     
     print("=" * 100)
